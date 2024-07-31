@@ -1,0 +1,27 @@
+import librosa
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import cdist
+from librosa.display import specshow
+
+def extract_mfcc(audio_path, sr=22050, n_mfcc=13, hop_length=512):
+    y, sr = librosa.load(audio_path, sr=sr)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, hop_length=hop_length)
+    return mfcc, sr
+
+def plot_mfcc(mfcc, sr, hop_length, title='MFCC'):
+    plt.figure(figsize=(10, 6))
+    specshow(mfcc, sr=sr, hop_length=hop_length, x_axis='time')
+    plt.colorbar()
+    plt.title(title)
+    plt.show()
+
+# Example usage
+keyword_path = 'keyword.wav'
+long_recording_path = 'long_recording.wav'
+
+mfcc_keyword, sr_keyword = extract_mfcc(keyword_path)
+mfcc_long_recording, sr_long_recording = extract_mfcc(long_recording_path)
+
+plot_mfcc(mfcc_keyword, sr_keyword, 512, title='MFCC of Keyword')
+plot_mfcc(mfcc_long_recording, sr_long_recording, 512, title='MFCC of Long Recording')
