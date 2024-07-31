@@ -1,0 +1,53 @@
+import librosa
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial.distance import cdist
+from librosa.display import specshow
+
+def extract_mfcc(audio_path, sr=22050, n_mfcc=13, hop_length=512):
+    y, sr = librosa.load(audio_path, sr=sr)
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc, hop_length=hop_length)
+    return mfcc, sr
+
+def plot_mfcc(mfcc, sr, hop_length, title='MFCC'):
+    plt.figure(figsize=(10, 6))
+    specshow(mfcc, sr=sr, hop_length=hop_length, x_axis='time')
+    plt.colorbar()
+    plt.title(title)
+    plt.show()
+
+# Example usage
+keyword_path = 'path_to_keyword.wav'
+long_recording_path = 'path_to_long_recording.wav'
+
+mfcc_keyword, sr_keyword = extract_mfcc(keyword_path)
+mfcc_long_recording, sr_long_recording = extract_mfcc(long_recording_path)
+
+plot_mfcc(mfcc_keyword, sr_keyword, 512, title='MFCC of Keyword')
+plot_mfcc(mfcc_long_recording, sr_long_recording, 512, title='MFCC of Long Recording')
+
+
+from librosa.sequence import dtw
+
+def find_keyword_in_recording(mfcc_keyword, mfcc_long_recording):
+    # Compute the distance matrix between the keyword and long recording
+    D = cdist(mfcc_keyword.T, mfcc_long_recording.T, metric='euclidean')
+    
+    # Compute the DTW cost matrix and the optimal path
+    cost, path = dtw(D)
+    
+    # The cost can be used to decide if the keyword is present or not
+    return cost, path
+
+# Example usage
+cost, path = find_keyword_in_recording(mfcc_keyword, mfcc_long_recording)
+
+print(f"DTW cost: {cost}")
+
+# Visualize the alignment
+plt.figure(figsize=(10, 6))
+plt.imshow(D.T, origin='lower', cmap='gray', interpolation='nearest')
+plt.plot(path[0], path[1], 'w')  # path[0] is keyword index, path[1] is long recording index
+plt.title('DTW Cost and Path')
+plt.colorbar()
+plt.show()
