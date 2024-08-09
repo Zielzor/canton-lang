@@ -1,0 +1,57 @@
+import os
+import numpy as np
+from pydub import AudioSegment
+from pydub.silence import split_on_silence
+import noisereduce as nr
+import soundfile as sf
+
+def remove_noise_and_silence(input_file, output_file, noise_reduce_strength=0.5, min_silence_len=1000, silence_thresh=-40):
+    # Load the audio file
+    audio = AudioSegment.from_wav(input_file)
+    
+    # Convert audio to numpy array
+    samples = np.array(audio.get_array_of_samples())
+    
+    # Perform noise reduction
+    reduced_noise = nr.reduce_noise(y=samples, sr=audio.frame_rate, prop_decrease=noise_reduce_strength)
+    
+    # Convert back to AudioSegment
+    reduced_noise_audio = AudioSegment(
+        reduced_noise.tobytes(),
+        frame_rate=audio.frame_rate,
+        sample_width=audio.sample_width,
+        channels=audio.channels
+    )
+    
+    # Split audio on silence
+    audio_chunks = split_on_silence(
+        reduced_noise_audio,
+        min_silence_len=min_silence_len,
+        silence_thresh=silence_thresh
+    )
+    
+    # Combine audio chunks
+    cleaned_audio = AudioSegment.empty()
+    for chunk in audio_chunks:
+        cleaned_audio += chunk
+    
+    # Export the result
+    cleaned_audio.export(output_file, format="wav")
+
+# Example usage
+input_directory = "input_wav_files"
+output_directory = "output_wav_files"
+
+# Create output directory if it doesn't exist
+if not os.path.exists(output_directory):
+    os.makedirs(output_directory)
+
+# Process all WAV files in the input directory
+for filename in os.listdir(input_directory):
+    if filename.endswith(".wav"):
+        input_path = os.path.join(input_directory, filename)
+        output_path = os.path.join(output_directory, f"cleaned_{filename}")
+        remove_noise_and_silence(input_path, output_path)
+        print(f"Processed: {filename}")
+
+print("All files processed.")
